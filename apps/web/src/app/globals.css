@@ -1,0 +1,19 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --wa-indigo: #1a1a2e;
+    --wa-gold: #e8d5b7;
+    --wa-cream: #f8f4ee;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    min-height: 100vh;
+  }
+}
