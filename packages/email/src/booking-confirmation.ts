@@ -1,4 +1,4 @@
-import { resend, FROM_EMAIL } from './resend'
+import { getResend, FROM_EMAIL } from './resend'
 
 interface BookingConfirmationData {
   to: string
@@ -16,7 +16,7 @@ export async function sendBookingConfirmation(data: BookingConfirmationData) {
   const checkInDate = new Date(data.checkIn).toLocaleDateString('ja-JP')
   const checkOutDate = new Date(data.checkOut).toLocaleDateString('ja-JP')
 
-  return resend.emails.send({
+  return getResend().emails.send({
     from: FROM_EMAIL,
     to: data.to,
     subject: `【予約確認】Smart Guesthouse - ${checkInDate}〜${checkOutDate}`,
