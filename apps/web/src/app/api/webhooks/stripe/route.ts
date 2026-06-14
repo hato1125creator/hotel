@@ -3,6 +3,8 @@ import { constructWebhookEvent } from '@smart-guesthouse/stripe'
 import { createClient, rooms, reservations, eq, and } from '@smart-guesthouse/db'
 import { sendBookingConfirmation } from '@smart-guesthouse/email'
 
+export const dynamic = 'force-dynamic'
+
 export async function POST(req: NextRequest) {
   const payload = await req.text()
   const signature = req.headers.get('stripe-signature')
