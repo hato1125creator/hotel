@@ -1,17 +1,24 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@smart-guesthouse/db'
+import { createClient, rooms, eq, asc } from '@smart-guesthouse/db'
 
 export async function GET() {
-  const supabase = createClient()
-  const { data, error } = await supabase
-    .from('rooms')
-    .select('id, name, description, capacity, price_per_night')
-    .eq('is_active', true)
-    .order('name')
+  try {
+    const db = createClient()
+    const data = await db
+      .select({
+        id: rooms.id,
+        name: rooms.name,
+        description: rooms.description,
+        capacity: rooms.capacity,
+        pricePerNight: rooms.pricePerNight,
+      })
+      .from(rooms)
+      .where(eq(rooms.isActive, true))
+      .orderBy(asc(rooms.name))
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json(data)
+  } catch (err) {
+    console.error('Rooms fetch error:', err)
+    return NextResponse.json({ error: 'サーバーエラーが発生しました' }, { status: 500 })
   }
-
-  return NextResponse.json(data ?? [])
 }

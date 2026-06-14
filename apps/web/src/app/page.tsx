@@ -1,17 +1,10 @@
 import Link from 'next/link'
-import { createClient } from '@smart-guesthouse/db'
+import { createClient, rooms, eq, asc } from '@smart-guesthouse/db'
 
 async function getRooms() {
-  // During build without env vars, return empty array
-  if (!process.env.NEXT_PUBLIC_SUPABASE_URL) return []
-
-  const supabase = createClient()
-  const { data } = await supabase
-    .from('rooms')
-    .select('*')
-    .eq('is_active', true)
-    .order('name')
-  return data ?? []
+  if (!process.env.DATABASE_URL) return []
+  const db = createClient()
+  return db.select().from(rooms).where(eq(rooms.isActive, true)).orderBy(asc(rooms.name))
 }
 
 export default async function HomePage() {
@@ -101,7 +94,7 @@ export default async function HomePage() {
                   <p className="text-stone-500 text-sm mb-4">{room.description}</p>
                   <div className="flex items-center justify-between">
                     <span className="text-2xl font-bold text-stone-800">
-                      ¥{room.price_per_night.toLocaleString()}
+                      ¥{room.pricePerNight.toLocaleString()}
                       <span className="text-sm font-normal text-stone-500">/泊</span>
                     </span>
                     <Link

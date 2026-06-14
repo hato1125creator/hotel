@@ -1,69 +1,62 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@smart-guesthouse/db'
+import { createClient, rooms, reservations, eq, and, lt, gt, inArray } from '@smart-guesthouse/db'
 import { createCheckoutSession } from '@smart-guesthouse/stripe'
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
-    const {
-      roomId,
-      guestName,
-      guestEmail,
-      guestPhone,
-      checkIn,
-      checkOut,
-      numGuests,
-      totalPrice,
-    } = body
+    const { roomId, guestName, guestEmail, guestPhone, checkIn, checkOut, numGuests, totalPrice } = body
 
     if (!roomId || !guestName || !guestEmail || !checkIn || !checkOut) {
       return NextResponse.json({ error: '必須項目を入力してください' }, { status: 400 })
     }
 
-    const supabase = createClient()
+    const db = createClient()
 
     // Check room availability
-    const { data: conflicts } = await supabase
-      .from('reservations')
-      .select('id')
-      .eq('room_id', roomId)
-      .in('status', ['pending', 'confirmed', 'checked_in'])
-      .lt('check_in', checkOut)
-      .gt('check_out', checkIn)
+    const conflicts = await db
+      .select({ id: reservations.id })
+      .from(reservations)
+      .where(
+        and(
+          eq(reservations.roomId, roomId),
+          inArray(reservations.status, ['pending', 'confirmed', 'checked_in']),
+          lt(reservations.checkIn, checkOut),
+          gt(reservations.checkOut, checkIn),
+        )
+      )
 
-    if (conflicts && conflicts.length > 0) {
+    if (conflicts.length > 0) {
       return NextResponse.json({ error: 'この日程はすでに予約されています' }, { status: 409 })
     }
 
     // Get room info
-    const { data: room } = await supabase
-      .from('rooms')
-      .select('name, price_per_night')
-      .eq('id', roomId)
-      .single()
+    const [room] = await db
+      .select({ name: rooms.name, pricePerNight: rooms.pricePerNight })
+      .from(rooms)
+      .where(eq(rooms.id, roomId))
 
     if (!room) {
       return NextResponse.json({ error: 'お部屋が見つかりません' }, { status: 404 })
     }
 
     // Create pending reservation
-    const { data: reservation, error: reservationError } = await supabase
-      .from('reservations')
-      .insert({
-        room_id: roomId,
-        guest_name: guestName,
-        guest_email: guestEmail,
-        guest_phone: guestPhone || null,
-        check_in: checkIn,
-        check_out: checkOut,
-        num_guests: numGuests ?? 1,
-        total_price: totalPrice,
+    const [reservation] = await db
+      .insert(reservations)
+      .values({
+        roomId,
+        guestName,
+        guestEmail,
+        guestPhone: guestPhone || null,
+        checkIn,
+        checkOut,
+        numGuests: numGuests ?? 1,
+        totalPrice,
         status: 'pending',
       })
-      .select()
-      .single()
+      .returning()
 
-    if (reservationError || !reservation) {
+    if (!reservation) {
       return NextResponse.json({ error: '予約の作成に失敗しました' }, { status: 500 })
     }
 
@@ -81,10 +74,10 @@ export async function POST(req: NextRequest) {
     })
 
     // Update reservation with session ID
-    await supabase
-      .from('reservations')
-      .update({ stripe_session_id: session.id })
-      .eq('id', reservation.id)
+    await db
+      .update(reservations)
+      .set({ stripeSessionId: session.id })
+      .where(eq(reservations.id, reservation.id))
 
     return NextResponse.json({ checkoutUrl: session.url })
   } catch (err) {

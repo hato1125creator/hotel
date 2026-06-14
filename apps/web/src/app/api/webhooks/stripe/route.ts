@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { constructWebhookEvent } from '@smart-guesthouse/stripe'
-import { createClient } from '@smart-guesthouse/db'
+import { createClient, rooms, reservations, eq, and } from '@smart-guesthouse/db'
 import { sendBookingConfirmation } from '@smart-guesthouse/email'
 
 export async function POST(req: NextRequest) {
@@ -19,37 +19,39 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid signature' }, { status: 400 })
   }
 
-  const supabase = createClient()
+  const db = createClient()
 
   switch (event.type) {
     case 'checkout.session.completed': {
       const session = event.data.object
       const reservationId = session.metadata?.reservationId
-
       if (!reservationId) break
 
-      const { data: reservation } = await supabase
-        .from('reservations')
-        .update({
+      const [reservation] = await db
+        .update(reservations)
+        .set({
           status: 'confirmed',
-          stripe_payment_intent_id: session.payment_intent as string,
+          stripePaymentIntentId: session.payment_intent as string,
         })
-        .eq('id', reservationId)
-        .select('*, rooms(name)')
-        .single()
+        .where(eq(reservations.id, reservationId))
+        .returning()
 
       if (reservation) {
-        const roomData = reservation as typeof reservation & { rooms: { name: string } | null }
+        const [room] = await db
+          .select({ name: rooms.name })
+          .from(rooms)
+          .where(eq(rooms.id, reservation.roomId))
+
         await sendBookingConfirmation({
-          to: reservation.guest_email,
-          guestName: reservation.guest_name,
-          roomName: roomData.rooms?.name ?? '客室',
-          checkIn: reservation.check_in,
-          checkOut: reservation.check_out,
-          numGuests: reservation.num_guests,
-          totalPrice: reservation.total_price,
+          to: reservation.guestEmail,
+          guestName: reservation.guestName,
+          roomName: room?.name ?? '客室',
+          checkIn: reservation.checkIn,
+          checkOut: reservation.checkOut,
+          numGuests: reservation.numGuests,
+          totalPrice: reservation.totalPrice,
           reservationId: reservation.id,
-          sesamePIN: reservation.sesame_pin ?? undefined,
+          sesamePIN: reservation.sesamePIN ?? undefined,
         })
       }
       break
@@ -59,11 +61,15 @@ export async function POST(req: NextRequest) {
       const session = event.data.object
       const reservationId = session.metadata?.reservationId
       if (reservationId) {
-        await supabase
-          .from('reservations')
-          .update({ status: 'cancelled' })
-          .eq('id', reservationId)
-          .eq('status', 'pending')
+        await db
+          .update(reservations)
+          .set({ status: 'cancelled' })
+          .where(
+            and(
+              eq(reservations.id, reservationId),
+              eq(reservations.status, 'pending'),
+            )
+          )
       }
       break
     }

@@ -8,7 +8,7 @@ interface Room {
   name: string
   description: string | null
   capacity: number
-  price_per_night: number
+  pricePerNight: number
 }
 
 export default function BookPage() {
@@ -39,7 +39,7 @@ export default function BookPage() {
     return Math.max(0, d)
   })()
 
-  const totalPrice = selectedRoom ? selectedRoom.price_per_night * nights : 0
+  const totalPrice = selectedRoom ? selectedRoom.pricePerNight * nights : 0
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -113,7 +113,7 @@ export default function BookPage() {
                       <div className="text-stone-500 text-sm">{room.description}</div>
                     </div>
                     <div className="text-right">
-                      <div className="font-bold text-stone-800">¥{room.price_per_night.toLocaleString()}</div>
+                      <div className="font-bold text-stone-800">¥{room.pricePerNight.toLocaleString()}</div>
                       <div className="text-stone-400 text-xs">/泊</div>
                     </div>
                   </label>
@@ -212,7 +212,7 @@ export default function BookPage() {
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span className="text-stone-500">{selectedRoom.name}</span>
-                  <span>¥{selectedRoom.price_per_night.toLocaleString()} × {nights}泊</span>
+                  <span>¥{selectedRoom.pricePerNight.toLocaleString()} × {nights}泊</span>
                 </div>
                 <div className="flex justify-between font-bold text-lg border-t border-amber-200 pt-2 mt-2">
                   <span>合計</span>
