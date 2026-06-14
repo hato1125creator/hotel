@@ -1,1 +1,1 @@
-export { stripe, createCheckoutSession, constructWebhookEvent } from './client'
+export { createCheckoutSession, constructWebhookEvent } from './client'
