@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
 import { createClient, rooms, eq, asc } from '@smart-guesthouse/db'
 
+export const dynamic = 'force-dynamic'
+
 export async function GET() {
   try {
     const db = createClient()

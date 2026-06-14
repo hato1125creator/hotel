@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient, rooms, reservations, eq, and, lt, gt, inArray } from '@smart-guesthouse/db'
 import { createCheckoutSession } from '@smart-guesthouse/stripe'
 
+export const dynamic = 'force-dynamic'
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
