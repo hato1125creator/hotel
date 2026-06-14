@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { useSearchParams, useRouter } from 'next/navigation'
+import { Suspense, useState, useEffect } from 'react'
+import { useSearchParams } from 'next/navigation'
 
 interface Room {
   id: string
@@ -11,9 +11,8 @@ interface Room {
   pricePerNight: number
 }
 
-export default function BookPage() {
+function BookForm() {
   const searchParams = useSearchParams()
-  const router = useRouter()
   const [rooms, setRooms] = useState<Room[]>([])
   const [selectedRoomId, setSelectedRoomId] = useState(searchParams.get('room') ?? '')
   const [form, setForm] = useState({
@@ -71,7 +70,6 @@ export default function BookPage() {
 
   return (
     <div className="min-h-screen bg-stone-50">
-      {/* Header */}
       <header className="bg-[#1a1a2e] text-amber-50 py-4 px-4">
         <div className="max-w-5xl mx-auto flex items-center justify-between">
           <a href="/" className="font-bold text-lg">Smart Guesthouse</a>
@@ -242,5 +240,17 @@ export default function BookPage() {
         </form>
       </div>
     </div>
+  )
+}
+
+export default function BookPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-stone-50 flex items-center justify-center">
+        <p className="text-stone-400">読み込み中...</p>
+      </div>
+    }>
+      <BookForm />
+    </Suspense>
   )
 }

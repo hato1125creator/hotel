@@ -1,10 +1,10 @@
 import Link from 'next/link'
-import { createClient, rooms, eq, asc } from '@smart-guesthouse/db'
+import { createClient, rooms as roomsTable, eq, asc } from '@smart-guesthouse/db'
 
 async function getRooms() {
   if (!process.env.DATABASE_URL) return []
   const db = createClient()
-  return db.select().from(rooms).where(eq(rooms.isActive, true)).orderBy(asc(rooms.name))
+  return db.select().from(roomsTable).where(eq(roomsTable.isActive, true)).orderBy(asc(roomsTable.name))
 }
 
 export default async function HomePage() {
